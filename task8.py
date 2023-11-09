@@ -1,33 +1,55 @@
-import datetime
+from datetime import date, timedelta, datetime
+from collections import defaultdict
 
-def get_birthdays_per_week(users):
-    today = datetime.date.today()
 
-    current_day_of_week = today.weekday()
+start_date = date.today()
+end_date = start_date + timedelta(7)
 
-    birthdays_per_day = {i: [] for i in range(7)}
+def get_period(start_date: date, days: int): 
+                                            
+    result = {}
+    for _ in range(days + 1):
+        result[start_date.day, start_date.month] = start_date.year
+        start_date += timedelta(1)
+    
+    return result
 
+def get_birthdays_per_week(users: list) -> list:
+
+    res = defaultdict(list)
+
+    start_date = date.today()
+    period = get_period(start_date, 7)
+    
+
+    if not users:
+        res = {}
+        return res
+         
     for user in users:
-        name = user['name']
-        birthday = user['birthday']
-        days_until_birthday = (birthday - today).days
+        bd: date = user["birthday"]
+        date_bd = bd.day, bd.month
+        
+        if date_bd in list(period):
+            
+            date_bd_week = bd.replace(year=period[date_bd])
+            
+            bd__weekday = date_bd_week.weekday()
+           
+            if bd__weekday in (5, 6):
+                res["Monday"].append(user["name"])
+            else:
+                res[date_bd_week.strftime("%A")].append(user["name"])
+          
+    return res
 
-        if days_until_birthday < 0:
-            days_until_birthday += 365
+if __name__ == "__main__":
+    users = [
+        {"name": "Jan Koum", "birthday": datetime(1976, 1, 1).date()},
+    ]
 
-        if days_until_birthday == 0:
-            day_to_greet = current_day_of_week
-        else:
-            day_to_greet = (current_day_of_week + days_until_birthday) % 7
-
-        day_name = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        while day_name[day_to_greet] in ["Saturday", "Sunday"]:
-            day_to_greet = (day_to_greet + 1) % 7
-
-        birthdays_per_day[day_name[day_to_greet]].append(name)
-
-    if not any(birthdays_per_day.values()):
-        return {}
-    else:
-        return birthdays_per_day
-
+    result = get_birthdays_per_week(users)
+    print(result)
+    # Виводимо результат
+    for day_name, names in result.items():
+        print(f"{day_name}: {', '.join(names)}")
